@@ -47,6 +47,7 @@ def build_parser() -> argparse.ArgumentParser:
     video_parser.add_argument("--track", action="append", required=True, help="Track spec PATH:LABEL.")
     video_parser.add_argument("--fps", type=float, required=True, help="Output video FPS.")
     video_parser.add_argument("--title", default="Barcode Timeline", help="Header title.")
+    video_parser.add_argument("--trim", action="store_true", help="Select images by frame number to match track length; ignores extra images in the frame directory.")
     video_parser.add_argument("--out", required=True, help="Output MP4 path.")
 
     return parser
@@ -71,6 +72,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         Path(args.out),
         fps=args.fps,
         title=args.title,
+        trim_to_track=args.trim,
     )
     return 0
 

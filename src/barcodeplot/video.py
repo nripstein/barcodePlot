@@ -16,6 +16,17 @@ COLOR_PLAYHEAD = (0, 0, 0)
 COLOR_BORDER = (220, 220, 220)
 
 
+def _extract_frame_number(path: Path) -> int | None:
+    name = path.stem
+    current = ""
+    for ch in name:
+        if ch.isdigit():
+            current += ch
+        elif current:
+            break
+    return int(current) if current else None
+
+
 def _frame_key(path: Path) -> tuple[int, int | str, str]:
     name = path.stem
     current = ""
@@ -120,6 +131,7 @@ def render_timeline_video(
     *,
     fps: float,
     title: str = "Barcode Timeline",
+    trim_to_track: bool = False,
 ) -> str:
     if fps <= 0:
         raise ValueError("fps must be positive.")
@@ -127,10 +139,26 @@ def render_timeline_video(
     image_paths = get_sorted_image_list(frame_dir)
     n_frames = rows[0].values.size
     if len(image_paths) != n_frames:
-        raise ValueError(
-            f"Frame count mismatch: images={len(image_paths)} track_length={n_frames}. "
-            "Provide a frame directory whose image count exactly matches the reference track."
-        )
+        if trim_to_track and rows[0].frame_numbers is not None:
+            image_by_frame: dict[int, str] = {}
+            for p in image_paths:
+                fn = _extract_frame_number(Path(p))
+                if fn is not None:
+                    image_by_frame[fn] = p
+            missing = [int(fn) for fn in rows[0].frame_numbers if int(fn) not in image_by_frame]
+            if missing:
+                raise ValueError(
+                    f"No image file found for {len(missing)} track frame number(s): {missing[:5]}{'...' if len(missing) > 5 else ''}"
+                )
+            image_paths = [image_by_frame[int(fn)] for fn in rows[0].frame_numbers]
+        elif trim_to_track and len(image_paths) >= n_frames:
+            image_paths = image_paths[:n_frames]
+        else:
+            raise ValueError(
+                f"Frame count mismatch: images={len(image_paths)} track_length={n_frames}. "
+                "Provide a frame directory whose image count exactly matches the reference track, "
+                "or use trim_to_track=True to select images by frame number."
+            )
     first = cv2.imread(image_paths[0])
     if first is None:
         raise ValueError(f"Failed to read frame image: {image_paths[0]}")
