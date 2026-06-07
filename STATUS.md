@@ -11,6 +11,10 @@
 - Added a CLI entrypoint:
   - `barcodeplot plot`
   - `barcodeplot video`
+- Added a video trimming option:
+  - Python API: `render_timeline_video(..., trim_to_track=True)`
+  - CLI: `barcodeplot video --trim`
+  - This allows a frame directory to contain extra images when the reference track covers only a subset.
 - Implemented binary barcode plots with the thesis red/green palette.
 - Implemented stacked barcode plots with any number of rows.
 - Implemented timeline video rendering with:
@@ -26,7 +30,18 @@
 - Added tests for API behavior, CSV loading, alignment, plotting, video rendering, and CLI smoke paths.
 - Verified the package locally with:
   - `PYTHONPATH=src pytest -q`
-  - Result: `16 passed`
+  - Result: `17 passed`
+
+## Repository State
+
+- The repo is initialized on branch `main`.
+- GitHub remote is configured:
+  - `origin`: `https://github.com/nripstein/barcodePlot.git`
+- Current meaningful local source changes are the video `--trim` feature and its test.
+- Generated local artifacts may be present and should usually stay out of commits:
+  - `__pycache__/`
+  - `.pytest_cache/`
+  - local `.png` / `.mp4` outputs
 
 ## Important Note
 
@@ -36,8 +51,8 @@
 
 ## Suggested Next Steps
 
-- Initialize a git repository in this directory if you want this package tracked separately.
-- Add a real GitHub remote and update the install example in `README.md`.
+- Add a `.gitignore` for Python caches, pytest cache, and local render outputs.
+- Commit and push the current `--trim` video changes if you want to keep them.
 - Install locally with `pip install -e .` and try the CLI on real data.
 - Decide whether you want to keep OpenCV-only plotting or switch static plots back to Matplotlib later.
 - Add example assets or screenshots to the README.
