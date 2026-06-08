@@ -13,7 +13,7 @@ from barcodeplot.video import render_timeline_video
 def _parse_track_spec(spec: str) -> tuple[str, str]:
     if ":" not in spec:
         raise ValueError(f"Track spec must be PATH:LABEL, got {spec!r}")
-    path, label = spec.split(":", 1)
+    path, label = spec.rsplit(":", 1)
     path = path.strip()
     label = label.strip()
     if not path or not label:
@@ -21,19 +21,29 @@ def _parse_track_spec(spec: str) -> tuple[str, str]:
     return path, label
 
 
+def _parse_npz_track_spec(spec: str) -> tuple[str, str, str, str] | None:
+    marker = ".npz:"
+    idx = spec.lower().find(marker)
+    if idx == -1:
+        return None
+    path = spec[: idx + len(".npz")].strip()
+    parts = [part.strip() for part in spec[idx + len(marker) :].split(":")]
+    if len(parts) != 3:
+        raise ValueError(
+            f"NPZ track spec must be PATH.npz:DATASET:VALUE:LABEL, got {spec!r}"
+        )
+    dataset, value, label = parts
+    if not path or not dataset or not value or not label:
+        raise ValueError(
+            f"NPZ track spec must be PATH.npz:DATASET:VALUE:LABEL, got {spec!r}"
+        )
+    return path, dataset, value, label
+
+
 def _load_track_spec(spec: str) -> BinaryTrack:
-    parts = spec.split(":")
-    path = parts[0].strip()
-    if path.lower().endswith(".npz"):
-        if len(parts) != 4:
-            raise ValueError(
-                f"NPZ track spec must be PATH.npz:DATASET:VALUE:LABEL, got {spec!r}"
-            )
-        dataset, value, label = (part.strip() for part in parts[1:])
-        if not path or not dataset or not value or not label:
-            raise ValueError(
-                f"NPZ track spec must be PATH.npz:DATASET:VALUE:LABEL, got {spec!r}"
-            )
+    npz_spec = _parse_npz_track_spec(spec)
+    if npz_spec is not None:
+        path, dataset, value, label = npz_spec
         return load_npz_track(path, dataset=dataset, value=value, label=label)
 
     path, label = _parse_track_spec(spec)

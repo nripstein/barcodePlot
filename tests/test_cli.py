@@ -6,6 +6,7 @@ import cv2
 import numpy as np
 import pytest
 
+from barcodeplot.cli import _parse_npz_track_spec, _parse_track_spec
 from barcodeplot.cli import main
 
 
@@ -15,6 +16,19 @@ def _write_dummy_frames(frame_dir: Path, count: int) -> None:
         image = np.zeros((48, 80, 3), dtype=np.uint8)
         image[:, :, 2] = idx * 20
         cv2.imwrite(str(frame_dir / f"{idx:06d}.png"), image)
+
+
+def test_parse_track_spec_preserves_windows_drive():
+    assert _parse_track_spec(r"C:\data\gt.csv:GT") == (r"C:\data\gt.csv", "GT")
+
+
+def test_parse_npz_track_spec_preserves_windows_drive():
+    assert _parse_npz_track_spec(r"C:\data\tracks.npz:sr1:y_true:GT") == (
+        r"C:\data\tracks.npz",
+        "sr1",
+        "y_true",
+        "GT",
+    )
 
 
 def test_cli_plot(tmp_path: Path):
