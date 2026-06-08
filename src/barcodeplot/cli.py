@@ -4,7 +4,7 @@ import argparse
 from pathlib import Path
 from typing import Sequence
 
-from barcodeplot.io import align_tracks, load_track_auto
+from barcodeplot.io import align_tracks, load_npz_track, load_track_auto
 from barcodeplot.plotting import save_barcode_plot
 from barcodeplot.types import BinaryTrack
 from barcodeplot.video import render_timeline_video
@@ -21,11 +21,29 @@ def _parse_track_spec(spec: str) -> tuple[str, str]:
     return path, label
 
 
+def _load_track_spec(spec: str) -> BinaryTrack:
+    parts = spec.split(":")
+    path = parts[0].strip()
+    if path.lower().endswith(".npz"):
+        if len(parts) != 4:
+            raise ValueError(
+                f"NPZ track spec must be PATH.npz:DATASET:VALUE:LABEL, got {spec!r}"
+            )
+        dataset, value, label = (part.strip() for part in parts[1:])
+        if not path or not dataset or not value or not label:
+            raise ValueError(
+                f"NPZ track spec must be PATH.npz:DATASET:VALUE:LABEL, got {spec!r}"
+            )
+        return load_npz_track(path, dataset=dataset, value=value, label=label)
+
+    path, label = _parse_track_spec(spec)
+    return load_track_auto(path, label=label)
+
+
 def _load_tracks(track_specs: Sequence[str]) -> list[BinaryTrack]:
     loaded = []
     for spec in track_specs:
-        path, label = _parse_track_spec(spec)
-        loaded.append(load_track_auto(path, label=label))
+        loaded.append(_load_track_spec(spec))
     if not loaded:
         raise ValueError("At least one --track is required.")
     return align_tracks(loaded[0], loaded[1:])

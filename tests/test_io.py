@@ -2,12 +2,14 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import numpy as np
 import pytest
 
 from barcodeplot import (
     BinaryTrack,
     align_tracks,
     load_binary_csv_track,
+    load_npz_track,
     load_repo_condensed_track,
     load_repo_gt_track,
 )
@@ -45,6 +47,39 @@ def test_load_binary_csv_track(tmp_path: Path):
     track = load_binary_csv_track(path, label="Pred")
     assert track.frame_numbers.tolist() == [1, 2]
     assert track.values.tolist() == [0, 1]
+
+
+def test_load_npz_track_loads_value_and_frame_numbers(tmp_path: Path):
+    path = tmp_path / "tracks.npz"
+    np.savez(
+        path,
+        sr1__frame_number=np.array([1, 2, 3]),
+        sr1__y_true=np.array([0, 1, 0]),
+        sr1__y_pred=np.array([0, 1, 1]),
+    )
+    track = load_npz_track(path, dataset="sr1", value="y_true", label="GT")
+    assert track.label == "GT"
+    assert track.frame_numbers.tolist() == [1, 2, 3]
+    assert track.values.tolist() == [0, 1, 0]
+
+
+def test_load_npz_track_sorts_frames_with_values(tmp_path: Path):
+    path = tmp_path / "tracks.npz"
+    np.savez(
+        path,
+        sr1__frame_number=np.array([3, 1, 2]),
+        sr1__y_pred=np.array([1, 0, 1]),
+    )
+    track = load_npz_track(path, dataset="sr1", value="y_pred", label="Pred")
+    assert track.frame_numbers.tolist() == [1, 2, 3]
+    assert track.values.tolist() == [0, 1, 1]
+
+
+def test_load_npz_track_missing_key_raises_helpful_error(tmp_path: Path):
+    path = tmp_path / "tracks.npz"
+    np.savez(path, sr1__frame_number=np.array([1, 2, 3]))
+    with pytest.raises(ValueError, match="sr1__y_pred"):
+        load_npz_track(path, dataset="sr1", value="y_pred", label="Pred")
 
 
 def test_align_tracks_fills_missing_frames_with_zero():

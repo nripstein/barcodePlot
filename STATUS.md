@@ -27,10 +27,11 @@
   - thesis GT CSV with `frame_number,gt_binary`
   - thesis GT CSV with `frame_id,label`
   - generic CSV with `frame_number,value`
+- Added support for NPZ inputs with `{dataset}__frame_number` and `{dataset}__{value}` arrays.
 - Added tests for API behavior, CSV loading, alignment, plotting, video rendering, and CLI smoke paths.
 - Verified the package locally with:
   - `PYTHONPATH=src pytest -q`
-  - Result: `17 passed`
+  - Result: `22 passed`
 
 ## Repository State
 

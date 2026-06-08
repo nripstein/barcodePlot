@@ -10,7 +10,7 @@ It is extracted from the barcode/timeline functionality in the thesis pipeline, 
 - Stacked barcode plots with any number of rows
 - Timeline videos with frame images on top and a moving playhead over barcode rows on the bottom
 - Python API and CLI
-- Helpers for both thesis-repo CSVs and a simple generic CSV format
+- Helpers for thesis-repo CSVs, a simple generic CSV format, and prediction NPZ archives
 
 ## Install
 
@@ -78,6 +78,34 @@ frame_number,value
 ```
 
 Accepted values include `0/1`, `true/false`, and `holding/not_holding`.
+
+## NPZ format
+
+NPZ tracks use keys in this layout:
+
+```text
+{dataset}__frame_number
+{dataset}__y_true
+{dataset}__y_pred
+```
+
+For example, load ground truth from dataset `sr1`:
+
+```python
+from barcodeplot import load_npz_track
+
+gt = load_npz_track("data/all_preds_binary.npz", dataset="sr1", value="y_true", label="GT")
+pred = load_npz_track("data/all_preds_binary.npz", dataset="sr1", value="y_pred", label="Pred")
+```
+
+The CLI form is `PATH.npz:DATASET:VALUE:LABEL`:
+
+```bash
+barcodeplot plot \
+  --track data/all_preds_binary.npz:sr1:y_true:GT \
+  --track data/all_preds_binary.npz:sr1:y_pred:Pred \
+  --out sr1_comparison.png
+```
 
 ## Thesis-repo compatibility
 

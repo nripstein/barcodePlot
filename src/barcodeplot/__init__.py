@@ -1,6 +1,7 @@
 from barcodeplot.io import (
     align_tracks,
     load_binary_csv_track,
+    load_npz_track,
     load_repo_condensed_track,
     load_repo_gt_track,
 )
@@ -12,6 +13,7 @@ __all__ = [
     "BinaryTrack",
     "align_tracks",
     "load_binary_csv_track",
+    "load_npz_track",
     "load_repo_condensed_track",
     "load_repo_gt_track",
     "render_timeline_video",

@@ -89,6 +89,28 @@ def load_binary_csv_track(
     return _normalize_frame_table(df[frame_column], df[value_column], label)
 
 
+def load_npz_track(path: str | Path, *, dataset: str, value: str, label: str) -> BinaryTrack:
+    path = Path(path).expanduser()
+    frame_key = f"{dataset}__frame_number"
+    value_key = f"{dataset}__{value}"
+    with np.load(path, allow_pickle=False) as archive:
+        missing = [key for key in (frame_key, value_key) if key not in archive]
+        if missing:
+            raise ValueError(f"NPZ track missing arrays: {missing}")
+        frame_numbers = archive[frame_key]
+        values = archive[value_key]
+
+    if frame_numbers.ndim != 1:
+        raise ValueError(f"NPZ array {frame_key!r} must be one-dimensional.")
+    if values.ndim != 1:
+        raise ValueError(f"NPZ array {value_key!r} must be one-dimensional.")
+    if frame_numbers.shape[0] != values.shape[0]:
+        raise ValueError(
+            f"NPZ arrays {frame_key!r} and {value_key!r} must have equal length."
+        )
+    return _normalize_frame_table(frame_numbers, values, label)
+
+
 def load_track_auto(path: str | Path, *, label: str) -> BinaryTrack:
     df = _read_csv(path)
     columns = set(df.columns)

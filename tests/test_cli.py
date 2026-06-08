@@ -4,6 +4,7 @@ from pathlib import Path
 
 import cv2
 import numpy as np
+import pytest
 
 from barcodeplot.cli import main
 
@@ -38,6 +39,36 @@ def test_cli_plot(tmp_path: Path):
     )
     assert code == 0
     assert out_path.exists()
+
+
+def test_cli_plot_npz_tracks(tmp_path: Path):
+    npz_path = tmp_path / "tracks.npz"
+    np.savez(
+        npz_path,
+        sr1__frame_number=np.array([1, 2, 3]),
+        sr1__y_true=np.array([0, 1, 0]),
+        sr1__y_pred=np.array([0, 1, 1]),
+    )
+    out_path = tmp_path / "barcode.png"
+    code = main(
+        [
+            "plot",
+            "--track",
+            f"{npz_path}:sr1:y_true:GT",
+            "--track",
+            f"{npz_path}:sr1:y_pred:Pred",
+            "--out",
+            str(out_path),
+        ]
+    )
+    assert code == 0
+    assert out_path.exists()
+
+
+def test_cli_rejects_invalid_npz_track_spec(tmp_path: Path):
+    npz_path = tmp_path / "tracks.npz"
+    with pytest.raises(ValueError, match="PATH\\.npz:DATASET:VALUE:LABEL"):
+        main(["plot", "--track", f"{npz_path}:sr1:y_true", "--out", str(tmp_path / "out.png")])
 
 
 def test_cli_video(tmp_path: Path):
