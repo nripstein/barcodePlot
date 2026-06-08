@@ -13,9 +13,11 @@ authors = [
   {name = "Noah Ripstein"}
 ]
 dependencies = [
+  "matplotlib>=3.7",
   "numpy>=1.24",
   "opencv-python>=4.8",
   "pandas>=2.0",
+  "Pillow>=10.0",
 ]
 classifiers = [
   "License :: OSI Approved :: MIT License",

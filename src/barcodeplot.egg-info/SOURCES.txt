@@ -2,6 +2,8 @@ LICENSE
 README.md
 pyproject.toml
 src/barcodeplot/__init__.py
+src/barcodeplot/_matplotlib.py
+src/barcodeplot/_text.py
 src/barcodeplot/cli.py
 src/barcodeplot/colors.py
 src/barcodeplot/io.py

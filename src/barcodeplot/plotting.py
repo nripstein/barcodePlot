@@ -3,16 +3,24 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Sequence
 
-import cv2
-import numpy as np
+from barcodeplot._matplotlib import configure_matplotlib
 
-from barcodeplot.colors import HOLDING_RGB, NOT_HOLDING_RGB, rgb_to_bgr
+configure_matplotlib()
+
+import matplotlib
+
+matplotlib.use("Agg")
+
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.colors import BoundaryNorm, ListedColormap
+from matplotlib.patches import Rectangle
+
+from barcodeplot.colors import HOLDING_RGB, NOT_HOLDING_RGB
 from barcodeplot.types import BinaryTrack
 
-COLOR_HOLDING = rgb_to_bgr(HOLDING_RGB)
-COLOR_NOT_HOLDING = rgb_to_bgr(NOT_HOLDING_RGB)
-COLOR_TEXT = (32, 32, 32)
-COLOR_BORDER = (220, 220, 220)
+COLOR_TEXT = "#202020"
+COLOR_BORDER = "#dcdcdc"
 
 
 def _coerce_tracks(tracks: Sequence[BinaryTrack]) -> list[BinaryTrack]:
@@ -43,47 +51,76 @@ def save_barcode_plot(
     row_gap = 8
     row_px = max(24, int(round(row_height * dpi * 0.33)))
     canvas_height = top_pad + bottom_pad + (len(rows) * row_px) + ((len(rows) - 1) * row_gap)
-    timeline_width = max(1, canvas_width - left_label_width - 12)
-    image = np.full((canvas_height, canvas_width, 3), 255, dtype=np.uint8)
+    n_frames = rows[0].values.size
+    row_gap_units = 0.22
+    row_units = 1.0
+    cmap = ListedColormap(
+        [
+            np.array(NOT_HOLDING_RGB, dtype=float) / 255.0,
+            np.array(HOLDING_RGB, dtype=float) / 255.0,
+        ]
+    )
+    norm = BoundaryNorm([-0.5, 0.5, 1.5], cmap.N)
+
+    fig = plt.figure(
+        figsize=(canvas_width / dpi, canvas_height / dpi),
+        dpi=dpi,
+        facecolor="white",
+    )
+    ax = fig.add_axes(
+        [
+            left_label_width / canvas_width,
+            bottom_pad / canvas_height,
+            max(1, canvas_width - left_label_width - 12) / canvas_width,
+            max(1, canvas_height - top_pad - bottom_pad) / canvas_height,
+        ]
+    )
+    ax.set_facecolor("white")
 
     for row_idx, track in enumerate(rows):
-        y0 = top_pad + row_idx * (row_px + row_gap)
-        y1 = y0 + row_px
-        x_edges = np.linspace(0, timeline_width, num=(track.values.size + 1), dtype=np.int32)
-        for idx in range(track.values.size):
-            x0 = left_label_width + int(x_edges[idx])
-            x1 = left_label_width + int(x_edges[idx + 1])
-            color = COLOR_HOLDING if int(track.values[idx]) == 1 else COLOR_NOT_HOLDING
-            cv2.rectangle(image, (x0, y0), (max(x0, x1 - 1), y1 - 1), color, thickness=-1)
-        cv2.rectangle(image, (left_label_width, y0), (canvas_width - 12, y1 - 1), COLOR_BORDER, thickness=1)
-        cv2.putText(
-            image,
-            track.label,
-            (10, y0 + int(row_px * 0.72)),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.7,
-            COLOR_TEXT,
-            2,
-            cv2.LINE_AA,
+        y0 = row_idx * (row_units + row_gap_units)
+        y1 = y0 + row_units
+        ax.imshow(
+            track.values[np.newaxis, :],
+            aspect="auto",
+            cmap=cmap,
+            norm=norm,
+            interpolation="nearest",
+            extent=(0, n_frames, y1, y0),
+        )
+        ax.add_patch(
+            Rectangle(
+                (0, y0),
+                n_frames,
+                row_units,
+                fill=False,
+                edgecolor=COLOR_BORDER,
+                linewidth=0.6,
+            )
         )
 
-    cv2.putText(
-        image,
-        "Frame",
-        (left_label_width + max(0, timeline_width // 2 - 28), canvas_height - 12),
-        cv2.FONT_HERSHEY_SIMPLEX,
-        0.7,
-        COLOR_TEXT,
-        2,
-        cv2.LINE_AA,
-    )
+    y_ticks = [
+        row_idx * (row_units + row_gap_units) + (row_units / 2.0)
+        for row_idx in range(len(rows))
+    ]
+    y_max = (len(rows) * row_units) + ((len(rows) - 1) * row_gap_units)
+    ax.set_xlim(0, n_frames)
+    ax.set_ylim(y_max, 0)
+    ax.set_yticks(y_ticks)
+    ax.set_yticklabels([track.label for track in rows], color=COLOR_TEXT)
+    ax.set_xticks([])
+    ax.set_xlabel("Frame", color=COLOR_TEXT, labelpad=4)
+    ax.tick_params(axis="y", length=0, pad=6, colors=COLOR_TEXT)
+    for spine in ax.spines.values():
+        spine.set_visible(False)
 
     output_path = Path(output_path).expanduser()
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    if not cv2.imwrite(str(output_path), image):
-        raise RuntimeError(f"Failed to write barcode image: {output_path}")
+    try:
+        fig.savefig(output_path, dpi=dpi, facecolor="white")
+    except OSError as exc:
+        raise RuntimeError(f"Failed to write barcode image: {output_path}") from exc
     if show:
-        cv2.imshow("barcodeplot", image)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        plt.show()
+    plt.close(fig)
     return str(output_path)

@@ -7,6 +7,7 @@ import numpy as np
 import pytest
 
 from barcodeplot import BinaryTrack, render_timeline_video
+from barcodeplot._text import draw_text_bgr
 
 
 def _write_dummy_frames(frame_dir: Path, count: int) -> None:
@@ -48,3 +49,13 @@ def test_render_timeline_video_trim_by_frame_number(tmp_path: Path):
     saved = render_timeline_video(frame_dir, [track], out_path, fps=10.0, trim_to_track=True)
     assert Path(saved).exists()
     assert Path(saved).stat().st_size > 0
+
+
+def test_draw_text_bgr_changes_expected_area():
+    image = np.full((48, 120, 3), 255, dtype=np.uint8)
+    draw_text_bgr(image, "GT", (8, 10), font_size=20, color_bgr=(32, 32, 32))
+
+    text_area = image[8:36, 6:60]
+    untouched_area = image[0:6, 0:60]
+    assert np.any(text_area != 255)
+    assert np.all(untouched_area == 255)

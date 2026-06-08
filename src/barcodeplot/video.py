@@ -7,6 +7,7 @@ import cv2
 import numpy as np
 
 from barcodeplot.colors import HOLDING_RGB, NOT_HOLDING_RGB, rgb_to_bgr
+from barcodeplot._text import draw_text_bgr
 from barcodeplot.types import BinaryTrack
 
 COLOR_HOLDING = rgb_to_bgr(HOLDING_RGB)
@@ -89,15 +90,12 @@ def build_timeline_panel(
             x1 = left_label_width + int(x_edges[idx + 1])
             color = COLOR_HOLDING if int(track.values[idx]) == 1 else COLOR_NOT_HOLDING
             cv2.rectangle(panel, (x0, y0), (max(x0, x1 - 1), y1 - 1), color, thickness=-1)
-        cv2.putText(
+        draw_text_bgr(
             panel,
             track.label,
-            (10, y0 + int(row_height * 0.70)),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.7,
-            COLOR_TEXT,
-            2,
-            cv2.LINE_AA,
+            (10, y0 + max(0, (row_height - 20) // 2)),
+            font_size=20,
+            color_bgr=COLOR_TEXT,
         )
     n_frames = rows[0].values.size
     ratio = min(max(frame_index / float(max(1, n_frames - 1)), 0.0), 1.0)
@@ -120,7 +118,7 @@ def compose_frame(
     frame_width = frame.shape[1]
     header = np.full((header_h, frame_width, 3), 255, dtype=np.uint8)
     text = f"{title} | frame={frame_number} ({frame_index + 1}/{n_frames})"
-    cv2.putText(header, text, (12, 37), cv2.FONT_HERSHEY_SIMPLEX, 0.85, COLOR_TEXT, 2, cv2.LINE_AA)
+    draw_text_bgr(header, text, (12, 16), font_size=24, color_bgr=COLOR_TEXT)
     return cv2.vconcat([frame, header, timeline_panel])
 
 
