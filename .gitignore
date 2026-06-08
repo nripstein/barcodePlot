@@ -28,3 +28,7 @@ env/
 
 # Local assistant/tool state
 .claude/
+AGENTS.md
+
+
+outputs/
