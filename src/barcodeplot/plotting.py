@@ -14,13 +14,11 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.colors import BoundaryNorm, ListedColormap
-from matplotlib.patches import Rectangle
 
 from barcodeplot.colors import HOLDING_RGB, NOT_HOLDING_RGB
 from barcodeplot.types import BinaryTrack
 
 COLOR_TEXT = "#202020"
-COLOR_BORDER = "#dcdcdc"
 
 
 def _compute_label_width(labels: list[str], fontsize: float, dpi: int) -> int:
@@ -100,16 +98,6 @@ def save_barcode_plot(
             norm=norm,
             interpolation="nearest",
             extent=(0, n_frames, y1, y0),
-        )
-        ax.add_patch(
-            Rectangle(
-                (0, y0),
-                n_frames,
-                row_units,
-                fill=False,
-                edgecolor=COLOR_BORDER,
-                linewidth=0.6,
-            )
         )
 
     y_ticks = [
