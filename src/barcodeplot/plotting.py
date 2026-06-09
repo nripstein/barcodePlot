@@ -23,6 +23,18 @@ COLOR_TEXT = "#202020"
 COLOR_BORDER = "#dcdcdc"
 
 
+def _compute_label_width(labels: list[str], fontsize: float, dpi: int) -> int:
+    fig_tmp = plt.figure(figsize=(0.1, 0.1), dpi=dpi)
+    renderer = fig_tmp.canvas.get_renderer()
+    max_px = 0
+    for label in labels:
+        t = fig_tmp.text(0, 0, label, fontsize=fontsize)
+        bb = t.get_window_extent(renderer=renderer)
+        max_px = max(max_px, int(np.ceil(bb.width)))
+    plt.close(fig_tmp)
+    return max_px
+
+
 def _coerce_tracks(tracks: Sequence[BinaryTrack]) -> list[BinaryTrack]:
     rows = list(tracks)
     if not rows:
@@ -45,7 +57,8 @@ def save_barcode_plot(
 ) -> str:
     rows = _coerce_tracks(tracks)
     canvas_width = max(600, int(round(width * dpi)))
-    left_label_width = 150
+    tick_fontsize = matplotlib.rcParams.get("ytick.labelsize") or matplotlib.rcParams["font.size"]
+    left_label_width = _compute_label_width([t.label for t in rows], tick_fontsize, dpi) + 16
     top_pad = 12
     bottom_pad = 44
     row_gap = 8
