@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import Sequence
 
 from barcodeplot.io import align_tracks, load_npz_track, load_track_auto
-from barcodeplot.plotting import save_barcode_plot
 from barcodeplot.types import BinaryTrack
 from barcodeplot.video import render_timeline_video
 
@@ -86,6 +85,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(argv)
     tracks = _load_tracks(args.track)
     if args.command == "plot":
+        from barcodeplot.plotting import save_barcode_plot
+
         save_barcode_plot(
             tracks,
             Path(args.out),
